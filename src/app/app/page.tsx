@@ -2,6 +2,8 @@ import React from "react";
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { AvailabilityBlock } from "@/app/actions/profile";
 import Header from "@/components/Header";

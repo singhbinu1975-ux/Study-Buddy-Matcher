@@ -1,6 +1,8 @@
 import React from "react";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import MatchesLayout from "./MatchesLayout";
 import Header from "@/components/Header";
