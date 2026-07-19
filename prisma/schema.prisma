@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String         @id
+  name         String
+  email        String         @unique
+  school       String
+  createdAt    DateTime       @default(now()) @map("created_at")
+  profiles     StudyProfile[]
+
+  @@map("users")
+}
+
+model StudyProfile {
+  id               String         @id @default(uuid())
+  userId           String         @map("user_id")
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject          String
+  goal             String   // exam_prep, homework_help, general_practice, language_exchange
+  format           String   // video, in_person, either
+  location         String?
+  availability     Json     // JSON array of availability items: { day: string, startTime: string, endTime: string }
+  createdAt        DateTime       @default(now()) @map("created_at")
+  sentRequests     MatchRequest[] @relation("SentRequests")
+  receivedRequests MatchRequest[] @relation("ReceivedRequests")
+
+  @@map("study_profiles")
+}
+
+model MatchRequest {
+  id                 String       @id @default(uuid())
+  requesterProfileId String       @map("requester_profile_id")
+  requesterProfile   StudyProfile @relation("SentRequests", fields: [requesterProfileId], references: [id], onDelete: Cascade)
+  recipientProfileId String       @map("recipient_profile_id")
+  recipientProfile   StudyProfile @relation("ReceivedRequests", fields: [recipientProfileId], references: [id], onDelete: Cascade)
+  status             String       // pending, accepted, declined, expired
+  createdAt          DateTime     @default(now()) @map("created_at")
+  messages           Message[]
+  sessions           Session[]
+
+  @@map("match_requests")
+}
+
+model Message {
+  id        String       @id @default(uuid())
+  matchId   String       @map("match_id")
+  match     MatchRequest @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  senderId  String       @map("sender_id")
+  content   String
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  @@map("messages")
+}
+
+model Session {
+  id            String       @id @default(uuid())
+  matchId       String       @map("match_id")
+  match         MatchRequest @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  proposerId    String       @map("proposer_id")
+  scheduledTime DateTime     @map("scheduled_time")
+  status        String       // proposed, confirmed, completed, cancelled
+  createdAt     DateTime     @default(now()) @map("created_at")
+  feedbacks     Feedback[]
+
+  @@map("sessions")
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  thumbsUp  Boolean  @map("thumbs_up")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([sessionId, userId])
+  @@map("feedbacks")
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  reporterId     String   @map("reporter_id")
+  reportedUserId String   @map("reported_user_id")
+  reason         String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("reports")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String   @map("blocker_id")
+  blockedId String   @map("blocked_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([blockerId, blockedId])
+  @@map("blocks")
+}
