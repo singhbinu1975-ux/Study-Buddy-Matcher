@@ -46,25 +46,25 @@ export default async function Header() {
   }
 
   return (
-    <nav className="relative z-10 border-b border-white/5 bg-slate-950/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">
+    <nav className="relative z-10 border-b border-white/5 bg-slate-950/80 backdrop-blur-md px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <Link href="/app" className="flex items-center gap-2">
-          <span className="text-xl font-extrabold tracking-tight text-white group-hover:text-indigo-400">
-            Study Buddy <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Matcher</span>
+          <span className="text-base sm:text-xl font-extrabold tracking-tight text-white group-hover:text-indigo-400">
+            Study Buddy <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent hidden sm:inline">Matcher</span>
           </span>
         </Link>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6">
         <Link
           href="/app"
-          className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+          className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
         >
           Dashboard
         </Link>
         <Link
           href="/matches"
-          className="text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+          className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
         >
           Find Buddies
         </Link>
@@ -72,17 +72,24 @@ export default async function Header() {
         {/* Requests Link with Conditional Badge */}
         <Link
           href="/matches/requests"
-          className="relative text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1.5"
+          className="relative text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-1"
         >
           Requests
           {pendingCount > 0 && (
-            <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white leading-none border border-slate-950">
+            <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-[8px] sm:text-[10px] font-bold text-white leading-none border border-slate-950">
               {pendingCount}
             </span>
           )}
         </Link>
 
-        {user && <UserButton />}
+        <Link
+          href="/app/settings"
+          className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition-colors"
+        >
+          Settings
+        </Link>
+
+        {user && <UserButton appearance={{ elements: { userButtonAvatarBox: "h-6 w-6 sm:h-8 sm:w-8" } }} />}
       </div>
     </nav>
   );

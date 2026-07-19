@@ -11,13 +11,16 @@ datasource db {
 }
 
 model User {
-  id           String         @id
-  name         String
-  email        String         @unique
-  school       String
-  createdAt    DateTime       @default(now()) @map("created_at")
-  profiles     StudyProfile[]
-  podMembers   PodMember[]
+  id              String         @id
+  name            String
+  email           String         @unique
+  school          String
+  createdAt       DateTime       @default(now()) @map("created_at")
+  emailOnRequest  Boolean        @default(true) @map("email_on_request")
+  emailOnMessage  Boolean        @default(true) @map("email_on_message")
+  emailOnReminder Boolean        @default(true) @map("email_on_reminder")
+  profiles        StudyProfile[]
+  podMembers      PodMember[]
 
   @@map("users")
 }
