@@ -32,7 +32,9 @@ export default async function AppDashboardPage() {
   let dbUser = null;
   let activeProfile = null;
   let activeMatches: any[] = [];
+  let dbPods: any[] = [];
   let upcomingSessions: any[] = [];
+  let upcomingPodSessions: any[] = [];
   let feedbackRequiredSession: any = null;
   let dbError = null;
 
@@ -187,6 +189,49 @@ export default async function AppDashboardPage() {
             });
           }
         }
+
+        // Fetch user's study pods
+        dbPods = await prisma.pod.findMany({
+          where: {
+            members: {
+              some: {
+                userId: user.id,
+              },
+            },
+          },
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+        // Fetch upcoming confirmed pod sessions
+        upcomingPodSessions = await prisma.podSession.findMany({
+          where: {
+            status: "confirmed",
+            pod: {
+              members: {
+                some: {
+                  userId: user.id,
+                },
+              },
+            },
+          },
+          include: {
+            pod: true,
+          },
+          orderBy: {
+            scheduledTime: "asc",
+          },
+        });
       }
     } catch (e: any) {
       console.error("Prisma Database Query Error:", e);
@@ -241,8 +286,24 @@ export default async function AppDashboardPage() {
       partnerName: partnerProfile.user.name,
       scheduledTime: sess.scheduledTime.toISOString(),
       subject: partnerProfile.subject,
+      isPod: false,
     };
   });
+
+  const formattedPodSessions = upcomingPodSessions.map((sess) => {
+    return {
+      id: sess.id,
+      partnerName: sess.pod.name,
+      scheduledTime: sess.scheduledTime.toISOString(),
+      subject: sess.pod.subject,
+      isPod: true,
+    };
+  });
+
+  const allSessions = [...formattedSessions, ...formattedPodSessions].sort(
+    (a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime()
+  );
+
 
   return (
     <div className="relative min-h-screen flex flex-col bg-slate-950 font-sans text-slate-100">
@@ -360,32 +421,35 @@ export default async function AppDashboardPage() {
                 <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold text-sm">
                   ✓
                 </div>
-                <h3 className="font-bold text-white text-lg">My Active Matches</h3>
+                <h3 className="font-bold text-white text-lg">My Active Matches & Study Pods</h3>
               </div>
               {!dbError && (
                 <span className="text-xs text-slate-500 font-medium">
-                  {buddies.length} Buddy{buddies.length !== 1 ? "ies" : ""} Connected
+                  {buddies.length + dbPods.length} Connected
                 </span>
               )}
             </div>
 
-            {buddies.length > 0 ? (
+            {buddies.length > 0 || dbPods.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {/* Render 1-on-1 Matches */}
                 {buddies.map((buddy) => (
                   <div
                     key={buddy.id}
-                    className="p-4 rounded-xl border border-white/5 bg-slate-900/50 space-y-2 text-xs"
+                    className="p-4 rounded-xl border border-white/5 bg-slate-900/50 space-y-2 text-xs flex flex-col justify-between"
                   >
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-white text-sm">{buddy.name}</h4>
-                      <span className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-bold uppercase tracking-wider">
-                        {buddy.subject}
-                      </span>
+                    <div>
+                      <div className="flex justify-between items-start gap-1.5">
+                        <h4 className="font-bold text-white text-sm truncate">{buddy.name}</h4>
+                        <span className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-bold uppercase tracking-wider shrink-0">
+                          {buddy.subject}
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-[10px] truncate">{buddy.school}</p>
+                      <p className="text-indigo-400 text-[10px] select-all cursor-copy font-mono break-all bg-slate-950 p-1.5 rounded mt-1.5 border border-white/5">
+                        ✉ {buddy.email}
+                      </p>
                     </div>
-                    <p className="text-slate-400 text-[10px]">{buddy.school}</p>
-                    <p className="text-indigo-400 text-[10px] select-all cursor-copy font-mono break-all bg-slate-950 p-1.5 rounded mt-1.5 border border-white/5">
-                      ✉ {buddy.email}
-                    </p>
                     <div className="pt-2">
                       <Link
                         href={`/matches/${buddy.id}/chat`}
@@ -396,10 +460,41 @@ export default async function AppDashboardPage() {
                     </div>
                   </div>
                 ))}
+
+                {/* Render Group Pods */}
+                {dbPods.map((pod) => (
+                  <div
+                    key={pod.id}
+                    className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 space-y-2 text-xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start gap-1.5">
+                        <h4 className="font-bold text-white text-sm truncate">{pod.name}</h4>
+                        <span className="px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 text-[9px] font-bold uppercase tracking-wider shrink-0">
+                          {pod.subject}
+                        </span>
+                      </div>
+                      <p className="text-slate-400 text-[10px]">
+                        Group Pod • {pod.members.length} member{pod.members.length !== 1 ? "s" : ""}
+                      </p>
+                      <div className="text-indigo-400 text-[10px] bg-slate-950 p-1.5 rounded mt-1.5 border border-white/5 truncate font-medium">
+                        👥 {pod.members.map((m: any) => m.user.name).join(", ")}
+                      </div>
+                    </div>
+                    <div className="pt-2">
+                      <Link
+                        href={`/pods/${pod.id}/chat`}
+                        className="w-full py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold text-center block transition-colors"
+                      >
+                        💬 Open Pod Room
+                      </Link>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="py-6 text-center space-y-2">
-                <p className="text-xs text-slate-400">You haven't matched with anyone yet.</p>
+                <p className="text-xs text-slate-400">You haven't matched with anyone or created any pods yet.</p>
                 <Link
                   href="/matches"
                   className="inline-block px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors"
@@ -430,23 +525,25 @@ export default async function AppDashboardPage() {
               </div>
               {!dbError && (
                 <span className="text-xs text-slate-500 font-medium">
-                  {formattedSessions.length} Confirmed
+                  {allSessions.length} Confirmed
                 </span>
               )}
             </div>
 
-            {formattedSessions.length > 0 ? (
+            {allSessions.length > 0 ? (
               <div className="space-y-3">
-                {formattedSessions.map((sess) => (
+                {allSessions.map((sess) => (
                   <div
                     key={sess.id}
                     className="p-3.5 rounded-xl border border-white/5 bg-slate-900/60 flex items-center justify-between gap-4 text-xs"
                   >
                     <div>
-                      <p className="font-bold text-white text-sm">Study session with {sess.partnerName}</p>
+                      <p className="font-bold text-white text-sm">
+                        {sess.isPod ? `Pod session: ${sess.partnerName}` : `Study session with ${sess.partnerName}`}
+                      </p>
                       <p className="text-slate-400 text-[10px] mt-0.5">Subject: {sess.subject}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="font-semibold text-emerald-400">
                         {new Date(sess.scheduledTime).toLocaleDateString([], {
                           month: "short",

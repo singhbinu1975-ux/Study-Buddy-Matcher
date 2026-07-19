@@ -86,6 +86,80 @@ async function main() {
     },
   });
 
+  // 4. Seed Match Requests and Pods for Testing
+  const aliceProfile = await prisma.studyProfile.findFirst({ where: { userId: alice.id } });
+  const bobProfile = await prisma.studyProfile.findFirst({ where: { userId: bob.id } });
+  const charlieProfile = await prisma.studyProfile.findFirst({ where: { userId: charlie.id } });
+
+  if (aliceProfile && bobProfile && charlieProfile) {
+    // Delete existing matches and pods to prevent conflicts
+    await prisma.matchRequest.deleteMany({});
+    await prisma.pod.deleteMany({});
+
+    // Seed Alice <=> Bob accepted match
+    await prisma.matchRequest.create({
+      data: {
+        requesterProfileId: aliceProfile.id,
+        recipientProfileId: bobProfile.id,
+        status: "accepted",
+      },
+    });
+
+    // Seed Alice <=> Charlie accepted match
+    await prisma.matchRequest.create({
+      data: {
+        requesterProfileId: aliceProfile.id,
+        recipientProfileId: charlieProfile.id,
+        status: "accepted",
+      },
+    });
+
+    // Create a Pod with Alice, Bob, and Charlie
+    const pod = await prisma.pod.create({
+      data: {
+        name: "Stanford Calculus Study Pod",
+        subject: "Calculus II",
+        createdBy: alice.id,
+        members: {
+          create: [
+            { userId: alice.id },
+            { userId: bob.id },
+            { userId: charlie.id },
+          ],
+        },
+      },
+    });
+
+    // Create a test message in the pod
+    await prisma.podMessage.create({
+      data: {
+        podId: pod.id,
+        senderId: alice.id,
+        content: "Hey guys! Welcome to our Calculus study pod. Let's schedule our first session!",
+      },
+    });
+
+    // Propose a group session in the pod
+    const session = await prisma.podSession.create({
+      data: {
+        podId: pod.id,
+        proposerId: alice.id,
+        scheduledTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
+        status: "proposed",
+      },
+    });
+
+    // Proposer auto-confirms
+    await prisma.podSessionConfirmation.create({
+      data: {
+        podSessionId: session.id,
+        userId: alice.id,
+      },
+    });
+    
+    console.log("Seeded Match Requests and Pods successfully!");
+  }
+
   console.log("Database seeded successfully!");
   console.log("Seeded Users:", { alice: alice.name, bob: bob.name, charlie: charlie.name });
 }

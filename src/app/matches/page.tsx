@@ -100,13 +100,23 @@ export default async function MatchesPage() {
 
       {/* Main Container */}
       <main className="relative z-10 flex-1 max-w-5xl w-full mx-auto px-6 py-12 flex flex-col justify-start space-y-6">
-        <div className="space-y-2 text-left">
-          <h2 className="text-3xl font-extrabold text-white">
-            Find Your Study Partner
-          </h2>
-          <p className="text-slate-400 text-sm max-w-xl">
-            Browse other students matching your subject preferences. Results are ranked automatically by subject relevance, availability overlaps, format, and campus location.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-6">
+          <div className="space-y-2 text-left">
+            <h2 className="text-3xl font-extrabold text-white">
+              Find Your Study Partner
+            </h2>
+            <p className="text-slate-400 text-sm max-w-xl">
+              Browse other students matching your subject preferences. Results are ranked automatically by subject relevance, availability overlaps, format, and campus location.
+            </p>
+          </div>
+          <div className="flex shrink-0">
+            <Link
+              href="/pods/create"
+              className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-900/20"
+            >
+              Create Study Pod
+            </Link>
+          </div>
         </div>
 
         {/* Database Error Banner */}

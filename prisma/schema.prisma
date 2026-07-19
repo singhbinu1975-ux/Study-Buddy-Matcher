@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -16,6 +17,7 @@ model User {
   school       String
   createdAt    DateTime       @default(now()) @map("created_at")
   profiles     StudyProfile[]
+  podMembers   PodMember[]
 
   @@map("users")
 }
@@ -105,4 +107,64 @@ model Block {
 
   @@unique([blockerId, blockedId])
   @@map("blocks")
+}
+
+model Pod {
+  id        String       @id @default(uuid())
+  name      String
+  subject   String
+  createdBy String       @map("created_by")
+  createdAt DateTime     @default(now()) @map("created_at")
+  members   PodMember[]
+  messages  PodMessage[]
+  sessions  PodSession[]
+
+  @@map("pods")
+}
+
+model PodMember {
+  id       String   @id @default(uuid())
+  podId    String   @map("pod_id")
+  pod      Pod      @relation(fields: [podId], references: [id], onDelete: Cascade)
+  userId   String   @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  @@unique([podId, userId])
+  @@map("pod_members")
+}
+
+model PodMessage {
+  id        String   @id @default(uuid())
+  podId     String   @map("pod_id")
+  pod       Pod      @relation(fields: [podId], references: [id], onDelete: Cascade)
+  senderId  String   @map("sender_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("pod_messages")
+}
+
+model PodSession {
+  id            String                   @id @default(uuid())
+  podId         String                   @map("pod_id")
+  pod           Pod                      @relation(fields: [podId], references: [id], onDelete: Cascade)
+  proposerId    String                   @map("proposer_id")
+  scheduledTime DateTime                 @map("scheduled_time")
+  status        String                   // proposed, confirmed, completed, cancelled
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  confirmations PodSessionConfirmation[]
+
+  @@map("pod_sessions")
+}
+
+model PodSessionConfirmation {
+  id           String     @id @default(uuid())
+  podSessionId String     @map("pod_session_id")
+  podSession   PodSession @relation(fields: [podSessionId], references: [id], onDelete: Cascade)
+  userId       String     @map("user_id")
+  confirmedAt  DateTime   @default(now()) @map("confirmed_at")
+
+  @@unique([podSessionId, userId])
+  @@map("pod_session_confirmations")
 }
